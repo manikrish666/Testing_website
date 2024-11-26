@@ -3,23 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Send Data to Axure</title>
+  <title>Excel to Repeater</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
-  <h3>Send Data to Axure</h3>
-  <button id="sendData">Send Data</button>
-
+  <h3>Select an Excel file to populate the repeater</h3>
+  <input type="file" id="upload" accept=".xlsx, .xls" />
   <script>
-    document.getElementById('sendData').addEventListener('click', function () {
-      const data = [
-        { Name: "Alice", Age: 25, City: "New York" },
-        { Name: "Bob", Age: 30, City: "San Francisco" },
-        { Name: "Charlie", Age: 35, City: "Chicago" }
-      ];
+    document.getElementById('upload').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (!file) {
+        alert('Please select a file!');
+        return;
+      }
 
-      // Send the data to Axure
-      window.parent.postMessage({ type: 'excelData', data: data }, '*');
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        // Read the first sheet
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        // Convert sheet to JSON
+        const jsonData = XLSX.utils.sheet_to_json(sheet);
+
+        // Send data to Axure repeater
+        sendDataToAxure(jsonData);
+      };
+
+      reader.readAsArrayBuffer(file);
     });
+
+    function sendDataToAxure(data) {
+      // Assuming Axure listens for messages via window.postMessage
+      window.parent.postMessage({ type: 'excelData', data: data }, '*');
+      console.log(data);
+    }
   </script>
 </body>
 </html>
